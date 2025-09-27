@@ -8,7 +8,7 @@ const cors = require("cors");
 
 
 dotenv.config();
-
+const port = process.env.PORT || 3000;
 const app = express();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 app.use(express.json());
@@ -139,4 +139,4 @@ app.post("/api/transcribe", upload.single("audio"), async (req, res) => {
 });
 
 
-app.listen(3000, () => console.log("🚀 Server running at http://localhost:3000"));
+app.listen(port, () => console.log(`🚀 Server running at http://localhost:${port}`));
