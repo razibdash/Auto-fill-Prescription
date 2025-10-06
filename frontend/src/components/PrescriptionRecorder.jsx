@@ -65,10 +65,13 @@ export default function PrescriptionRecorder() {
       fd.append("audio", blob, "speech.webm");
       fd.append("country", country);
       console.log(fd);
-      const res = await fetch("http://localhost:3000/api/transcribe", {
-        method: "POST",
-        body: fd,
-      });
+      const res = await fetch(
+        "https://auto-fill-prescription.onrender.com/api/transcribe",
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
 
       if (!res.ok) {
         const text = await res.text();
