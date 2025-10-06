@@ -1,6 +1,7 @@
 // PrescriptionRecorder.jsx
 import React, { useState, useRef } from "react";
-
+import { motion } from "framer-motion";
+import { MdOutlineKeyboardVoice, MdVoiceOverOff } from "react-icons/md";
 export default function PrescriptionRecorder() {
   const [recording, setRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -14,6 +15,8 @@ export default function PrescriptionRecorder() {
     medications: [], // {name, dose, frequency, duration, notes}
     instructions: "",
   });
+  const [waveHeights] = useState([4, 6, 8, 6, 4]);
+  const [country, setCountry] = useState("");
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -56,10 +59,12 @@ export default function PrescriptionRecorder() {
 
   async function uploadAudio(blob) {
     setLoading(true);
+    // https://auto-fill-prescription.onrender.com
     try {
       const fd = new FormData();
       fd.append("audio", blob, "speech.webm");
-
+      fd.append("country", country);
+      console.log(fd);
       const res = await fetch("http://localhost:3000/api/transcribe", {
         method: "POST",
         body: fd,
@@ -71,7 +76,7 @@ export default function PrescriptionRecorder() {
       }
 
       const data = await res.json();
-      // data: { transcription: "...", prescription: {...} }
+      console.log("Transcription response:", data);
       setTranscription(data.transcription || "");
       if (data.prescription) setPrescription(data.prescription);
     } catch (err) {
@@ -102,51 +107,131 @@ export default function PrescriptionRecorder() {
     meds.splice(idx, 1);
     setPrescription({ ...prescription, medications: meds });
   }
+  const handleCountryChange = (event) => {
+    const selectedCountry = event.target.value;
+    setCountry(selectedCountry);
+    console.log("Selected Country:", selectedCountry);
+  };
   console.log(transcription, prescription);
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h2 className="text-2xl font-semibold mb-4">
-        Voice → Auto-fill Prescription
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold mb-4 text-center">
+          Prescription Recorder
+        </h2>
+        <div className="flex flex-col gap-2 w-64">
+          <label
+            htmlFor="country"
+            className="text-sm font-medium text-gray-400"
+          >
+            Choose a Country:
+          </label>
 
-      <div className="mb-4">
-        {!recording ? (
-          <button
-            onClick={startRecording}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          <select
+            id="country"
+            value={country}
+            onChange={handleCountryChange}
+            className="p-2 border rounded-md focus:ring-2 bg-stone-800 focus:ring-blue-500 focus:outline-none"
           >
-            Start Recording
-          </button>
-        ) : (
-          <button
-            onClick={stopRecording}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Stop Recording
-          </button>
+            <option value="">-- Select Country --</option>
+            <option value="Bangladesh">Bangladesh</option>
+            <option value="India">India</option>
+            <option value="Japan">Japan</option>
+            <option value="China">China</option>
+          </select>
+
+          {country && (
+            <p className="text-sm text-gray-600">
+              You selected: <span className="font-semibold">{country}</span>
+            </p>
+          )}
+        </div>
+      </div>
+      {/* 🎤 Record Button */}
+      <div className="mb-6 flex flex-col items-center">
+        <div className="relative flex items-center justify-center">
+          {/* 🔵 Pulsing Mic Glow */}
+          {recording && (
+            <motion.div
+              className="absolute rounded-full bg-blue-400/40"
+              style={{ width: 80, height: 80 }}
+              animate={{
+                scale: [1, 1.4, 1],
+                opacity: [0.6, 0, 0.6],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          )}
+
+          {/* 🎙️ Mic Button */}
+          {!recording ? (
+            <button
+              onClick={startRecording}
+              className="relative z-10 flex items-center justify-center w-16 h-16 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transition"
+            >
+              <MdOutlineKeyboardVoice className="text-3xl" />
+            </button>
+          ) : (
+            <button
+              onClick={stopRecording}
+              className="relative z-10 flex items-center justify-center w-16 h-16 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition"
+            >
+              <MdVoiceOverOff className="text-3xl" />
+            </button>
+          )}
+        </div>
+
+        {/* 🔊 Recording Animation */}
+        {recording && (
+          <div className="flex items-end justify-center h-6 mt-6 space-x-1">
+            {waveHeights.map((h, i) => (
+              <motion.div
+                key={i}
+                className="w-1 bg-blue-500 rounded"
+                animate={{
+                  height: [h, h * 2, h, h * 1.5, h],
+                }}
+                transition={{
+                  duration: 0.6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.1,
+                }}
+              />
+            ))}
+          </div>
         )}
-        <span className="ml-4 text-sm text-gray-600">
-          {recording ? "Recording..." : ""}
+
+        {/* 🎧 Recording Status */}
+        <span className="mt-2 text-sm text-gray-600">
+          {recording ? "Listening..." : ""}
         </span>
       </div>
 
+      {/* 🎵 Audio Player */}
       {audioUrl && (
         <div className="mb-4">
-          <audio controls src={audioUrl} />
+          <audio controls src={audioUrl} className="w-full" />
         </div>
       )}
 
+      {/* ⏳ Loading Text */}
       {loading && (
-        <div className="mb-4 text-sm text-blue-600">
+        <div className="mb-4 text-sm text-blue-600 animate-pulse">
           Processing... please wait.
         </div>
       )}
 
+      {/* 🧾 Transcription Output */}
       {transcription && (
-        <div className="mb-4 p-4 bg-black-50 text-stone-200 rounded border">
-          <h3 className="font-medium mb-2">Transcription</h3>
-          <p className="text-sm">{transcription}</p>
+        <div className="mb-4 p-4 bg-gray-900 text-gray-100 rounded-lg border border-gray-700 shadow">
+          <h3 className="font-semibold mb-2">Transcription</h3>
+          <p className="text-sm leading-relaxed">{transcription}</p>
         </div>
       )}
 
