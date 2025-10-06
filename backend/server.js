@@ -62,6 +62,7 @@ app.post("/api/transcribe", upload.single("audio"), async (req, res) => {
       prompt: systemPrompt(country),
     });
     const text = transcription.text;
+    console.log(text);
 
             const prompt = `
             You are a medical scribe assistant. 
