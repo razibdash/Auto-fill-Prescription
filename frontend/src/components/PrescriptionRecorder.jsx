@@ -32,7 +32,9 @@ export default function PrescriptionRecorder() {
       instructions: "",
     });
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new MediaRecorder(stream);
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: "audio/webm;codecs=opus",
+    });
     mediaRecorderRef.current = mediaRecorder;
     audioChunksRef.current = [];
 
@@ -65,14 +67,12 @@ export default function PrescriptionRecorder() {
       fd.append("audio", blob, "speech.webm");
       fd.append("country", country);
       console.log(fd);
-      const res = await fetch(
-        "https://auto-fill-prescription.onrender.com/api/transcribe",
-        {
-          method: "POST",
-          body: fd,
-        }
-      );
+      const res = await fetch("http://localhost:3000/api/transcribe", {
+        method: "POST",
+        body: fd,
+      });
 
+      console.log("Response status:", res.status);
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || "Transcription failed");
@@ -80,7 +80,7 @@ export default function PrescriptionRecorder() {
 
       const data = await res.json();
       console.log("Transcription response:", data);
-      setTranscription(data.transcription || "");
+      setTranscription(data.englishTranscription || "");
       if (data.prescription) setPrescription(data.prescription);
     } catch (err) {
       console.error(err);
@@ -115,7 +115,6 @@ export default function PrescriptionRecorder() {
     setCountry(selectedCountry);
     console.log("Selected Country:", selectedCountry);
   };
-  console.log(transcription, prescription);
 
   return (
     <div className="max-w-3xl mx-auto p-6">
