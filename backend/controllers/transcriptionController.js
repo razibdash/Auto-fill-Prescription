@@ -10,20 +10,12 @@ const elevenlabs = new ElevenLabsClient({
 });
 console.log('ElevenLabs client initialized.', elevenlabs);
 async function transcribeAudio(req, res) {
-  try {
+  try { 
     if (!req.file) return res.status(400).json({ error: "No audio uploaded" });
-
     const audioPath = path.resolve(req.file.path);
     const { country } = req.body;
      const filePath = req.file.path; 
     const audioFileStream = fs.createReadStream(filePath);
-    // 2 Transcribe raw audio
-    // const transcriptionResult = await groq.audio.transcriptions.create({
-    //   file: audioFileStream,
-    //   model: "whisper-large-v3",
-    //   response_format: "json",
-    // });
- 
 
     // Using ElevenLabs for transcription
         const transcriptionResult = await elevenlabs.speechToText.convert({
@@ -35,7 +27,7 @@ async function transcribeAudio(req, res) {
 
         console.log('Transcription successful.');
            const rawText = transcriptionResult.text;
-    console.log("Raw transcription:", rawText);
+        console.log("Raw transcription:", rawText);
 
     // 3️  Translate to English if needed
     const englishText = await translateToEnglish(rawText);
@@ -50,7 +42,7 @@ async function transcribeAudio(req, res) {
         { role: "system", content: systemPrompt(country) },
         { role: "user", content: prompt },
       ],
-      temperature: 0.2,
+      temperature: 0.8,
     });
 
     // 4️⃣ Safely parse JSON: remove backticks, extra text
@@ -59,7 +51,6 @@ async function transcribeAudio(req, res) {
     const match = modelContent.match(/\{[\s\S]*\}/);
 
     if (!match) throw new Error("No valid JSON found in model output");
-
     const prescription = JSON.parse(match[0]);
 
     const transcriptionJSON = {

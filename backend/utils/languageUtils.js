@@ -57,3 +57,13 @@ Original:
 }
 
 module.exports = { detectLanguage, translateToEnglish };
+
+function checkMedicationName(name) {
+  // Basic validation: non-empty and reasonable length
+  if (typeof name !== 'string' || name.trim() === '' || name.length > 100) {
+    return false;
+  }
+  // Allow letters, numbers, spaces, hyphens, and commas
+  const validNamePattern = /^[a-zA-Z0-9\s\-,]+$/;
+  return validNamePattern.test(name);
+}
