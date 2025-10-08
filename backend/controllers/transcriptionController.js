@@ -3,31 +3,42 @@ const path = require("path");
 const groq = require("../config/groqClient");
 const { detectLanguage, translateToEnglish } = require("../utils/languageUtils");
 const { systemPrompt,userPrompt } = require("../prompts/userPrompt");
+const { ElevenLabsClient } = require('@elevenlabs/elevenlabs-js');
 
+const elevenlabs = new ElevenLabsClient({
+    apiKey: process.env.ELEVENLABS_API_KEY,
+});
+console.log('ElevenLabs client initialized.', elevenlabs);
 async function transcribeAudio(req, res) {
   try {
     if (!req.file) return res.status(400).json({ error: "No audio uploaded" });
 
     const audioPath = path.resolve(req.file.path);
     const { country } = req.body;
-    console.log("Country:", country);
-
-    // 1 Detect language
-    const detectedLang = await detectLanguage(audioPath);
-    // console.log("detectedLang the voice lang->",detectedLang);
-
+     const filePath = req.file.path; 
+    const audioFileStream = fs.createReadStream(filePath);
     // 2 Transcribe raw audio
-    const transcriptionResult = await groq.audio.transcriptions.create({
-      file: fs.createReadStream(audioPath),
-      model: "whisper-large-v3-turbo",
-      language: detectedLang,
-        response_format: "json",
-    });
-    const rawText = transcriptionResult.text;
+    // const transcriptionResult = await groq.audio.transcriptions.create({
+    //   file: audioFileStream,
+    //   model: "whisper-large-v3",
+    //   response_format: "json",
+    // });
+ 
+
+    // Using ElevenLabs for transcription
+        const transcriptionResult = await elevenlabs.speechToText.convert({
+            file: audioFileStream, 
+            modelId: 'scribe_v1', 
+            language: 'bn', 
+            diarize: true
+        });
+
+        console.log('Transcription successful.');
+           const rawText = transcriptionResult.text;
     console.log("Raw transcription:", rawText);
 
     // 3️  Translate to English if needed
-    const englishText = await translateToEnglish(rawText, detectedLang);
+    const englishText = await translateToEnglish(rawText);
     console.log("English transcription:", englishText);
 
     // 4️ Optional: Apply userPrompt + systemPrompt for structured JSON
@@ -60,8 +71,6 @@ async function transcribeAudio(req, res) {
     fs.unlinkSync(audioPath);
 
     res.json({
-
-      detectedLanguage: detectedLang,
       rawTranscription: rawText,
       transcriptionJSON,
       englishTranscription: transcriptionJSON.transcription,
