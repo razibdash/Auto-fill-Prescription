@@ -10,4 +10,10 @@ app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 app.use("/api", transcriptionRoutes);
 
-app.listen(port, () => console.log(`🚀 Server running at http://localhost:${port}`));
+app.get("/", (req, res) => {
+  res.send("server is running");
+});
+
+app.listen(port, () =>
+  console.log(`🚀 Server running at http://localhost:${port}`)
+);
