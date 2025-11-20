@@ -1,5 +1,6 @@
 // PrescriptionRecorder.jsx
 import React, { useState, useRef } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { MdOutlineKeyboardVoice, MdVoiceOverOff } from "react-icons/md";
 export default function PrescriptionRecorder() {
@@ -31,9 +32,15 @@ export default function PrescriptionRecorder() {
       medications: [],
       instructions: "",
     });
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: 16000,
+        channelCount: 1,
+      },
+    });
     const mediaRecorder = new MediaRecorder(stream, {
       mimeType: "audio/webm;codecs=opus",
+      audioBitsPerSecond: 48000,
     });
     mediaRecorderRef.current = mediaRecorder;
     audioChunksRef.current = [];
